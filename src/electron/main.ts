@@ -21,6 +21,7 @@ function createWindow() {
   } else {
     // production mode loads the built renderer files (index.html)
     win.loadFile(path.join(__dirname, '../renderer/index.html'));
+    //win.webContents.openDevTools({ mode: 'detach' }); // Open the DevTools in detached mode
   }
 }
 

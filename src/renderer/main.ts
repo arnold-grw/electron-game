@@ -1,7 +1,7 @@
 import * as THREE from 'three';
+import {createMain} from './sceneLoader';
+import { GameManager } from '../core/gameManager';
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.01, 1000);
 
 const renderer = new THREE.WebGLRenderer({
     antialias: false
@@ -9,21 +9,31 @@ const renderer = new THREE.WebGLRenderer({
 
 //set render size
 renderer.setSize(640, 360, false);
+//renderer.setSize(1900, 1080, false);
 renderer.setPixelRatio(window.devicePixelRatio);
-//renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+const canvas = renderer.domElement;
+canvas.addEventListener('click', () => {
+  canvas.requestPointerLock();
+});
+document.body.appendChild(canvas);
 
-const geometry = new THREE.BoxGeometry();
-const material = new THREE.MeshBasicMaterial({ color: 0xff00fe });
-const cube = new THREE.Mesh(geometry, material);
+const scene = await createMain();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.01, 1000);
+const gameManager = new GameManager();
 
-scene.add(cube);
-camera.position.z = 5;
+// link camera to player body and head
+const body = gameManager.getBody();
+const head = gameManager.getHead();
+body.add(head);
+head.add(camera);
+scene.add(body);
+
 
 function animate() {
-  requestAnimationFrame(animate);
-  cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01;
-  renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+
+    gameManager.update();
+
+    renderer.render(scene, camera);
 }
 animate();
