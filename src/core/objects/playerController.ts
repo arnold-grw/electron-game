@@ -1,8 +1,10 @@
 import * as THREE from 'three';
-import { InputManager } from './inputManager';
+import { InputManager } from '../manager/inputManager';
+import { Hitbox } from './hitbox';
 
 export class PlayerController {
     input: InputManager;
+    colliders: Hitbox[] = [];
     walkingSpeed: number;
     mouseSensitivity: number = 0.002;
 
@@ -18,12 +20,14 @@ export class PlayerController {
         this.input = new InputManager();
     }
 
-    updatePos(body: THREE.Object3D) {
+    updatePos(body: THREE.Object3D, collisionRadius: number) {
         const direction = this.getWASD();
         let targetVelocity = new THREE.Vector3();
+        let moveDir = new THREE.Vector3();
+
 
         if (direction.length() > 0) {
-            const moveDir = new THREE.Vector3(direction.x, 0, direction.z);
+            moveDir = new THREE.Vector3(direction.x, 0, direction.z);
             moveDir.applyEuler(new THREE.Euler(0, body.rotation.y, 0));
             targetVelocity.copy(moveDir).multiplyScalar(this.walkingSpeed);
         }
@@ -35,6 +39,26 @@ export class PlayerController {
         if (direction.length() === 0) {
             this.velocity.multiplyScalar(this.damping);
         }
+
+        //collision
+        for (const collider of this.colliders) {
+        const start = body.position.clone();
+        const middle = start.clone().add(moveDir.clone().multiplyScalar(collisionRadius));
+        const end = middle.clone().add(this.velocity);
+
+        const intersection = collider.intersectSegment(start, end);
+        if (intersection) {
+            const { point, normal } = intersection;
+
+            // Vector from intersection point to intended position
+            const penetrationVector = end.clone().sub(point);
+
+            // Project velocity onto the plane defined by the collision normal (slide along surface)
+            const slideVelocity = this.velocity.clone().projectOnPlane(normal);
+
+            this.velocity.copy(slideVelocity);
+        }
+    }
 
         body.position.add(this.velocity);
     }
@@ -62,5 +86,9 @@ export class PlayerController {
         if (this.input.isKeyDown('KeyD')) direction.x = 1;
         direction.normalize();
         return direction;
+    }
+
+    updateWalkCycle() {
+        // Implement walk cycle logic if needed
     }
 }

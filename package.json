@@ -13,6 +13,12 @@
     "dev:electron": "electron .",
     "dev": "concurrently \"npm run dev:main\" \"npm run dev:vite\" \"npm run dev:electron\""
   },
+  "build": {
+    "appId": "com.deinname.electron-game",
+    "win": {
+      "icon": "assets/icon.ico"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/arnold-grw/electron-game.git"

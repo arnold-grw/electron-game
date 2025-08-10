@@ -11,6 +11,9 @@ function createWindow() {
             nodeIntegration: false,
             contextIsolation: true,
         },
+        icon: path.resolve(app.isPackaged
+            ? path.join(process.resourcesPath, 'assets', 'icon.ico')
+            : path.join(__dirname, '../../assets/icon.ico'))
     });
     if (process.env.VITE_DEV_SERVER_URL) {
         // dev mode loads the Vite dev server
