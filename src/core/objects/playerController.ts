@@ -1,9 +1,12 @@
 import * as THREE from 'three';
 import { InputManager } from '../manager/inputManager';
+import { Platform } from './platform';
 import { Hitbox } from './hitbox';
+import { PlatformNavigator } from './platformNavigator';
 
 export class PlayerController {
     input: InputManager;
+    platforms: Platform[] = [];
     colliders: Hitbox[] = [];
     walkingSpeed: number;
     mouseSensitivity: number = 0.002;
@@ -40,26 +43,44 @@ export class PlayerController {
             this.velocity.multiplyScalar(this.damping);
         }
 
-        //collision
-        for (const collider of this.colliders) {
-        const start = body.position.clone();
-        const middle = start.clone().add(moveDir.clone().multiplyScalar(collisionRadius));
-        const end = middle.clone().add(this.velocity);
 
-        const intersection = collider.intersectSegment(start, end);
-        if (intersection) {
-            const { point, normal } = intersection;
+        // when moving
+        if (this.velocity.length() > 0) {
+            const platformNavigator = new PlatformNavigator(this.platforms);
+            const currentPlatform = platformNavigator.findCurrentPlatform(body.position);
+            if (currentPlatform) {
+                body.position.y = platformNavigator.findY(body.position, currentPlatform);
 
-            // Vector from intersection point to intended position
-            const penetrationVector = end.clone().sub(point);
+                if (!platformNavigator.canStepTo(body.position.clone().add(this.velocity), currentPlatform)) {
+                    this.velocity.set(0, 0, 0); // stop movement if can't step to target position
+                }
+            }
 
-            // Project velocity onto the plane defined by the collision normal (slide along surface)
-            const slideVelocity = this.velocity.clone().projectOnPlane(normal);
 
-            this.velocity.copy(slideVelocity);
+
+
+            /*
+            //collision
+            for (const collider of this.colliders) {
+            const start = body.position.clone();
+            const middle = start.clone().add(moveDir.clone().multiplyScalar(collisionRadius));
+            const end = middle.clone().add(this.velocity);
+
+            const intersection = collider.intersectSegment(start, end);
+            if (intersection) {
+                const { point, normal } = intersection;
+
+                // Vector from intersection point to intended position
+                const penetrationVector = end.clone().sub(point);
+
+                // Project velocity onto the plane defined by the collision normal (slide along surface)
+                const slideVelocity = this.velocity.clone().projectOnPlane(normal);
+
+                this.velocity.copy(slideVelocity);
+            }
         }
-    }
-
+        */
+        }
         body.position.add(this.velocity);
     }
 

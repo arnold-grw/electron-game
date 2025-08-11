@@ -14,6 +14,7 @@ export class Player{
     constructor(scene: THREE.Scene) {
         this.scene = scene;
         this.playerController = new PlayerController(0.04);
+        this.playerController.platforms = this.scene.userData.platforms || []; // Get platforms from scene data
         this.updateColliders() // Initialize colliders for the player controller
         this.body = new THREE.Object3D();
         this.head = new THREE.Object3D();

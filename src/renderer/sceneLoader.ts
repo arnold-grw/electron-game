@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { Platform } from '../core/objects/platform';
 import { Hitbox } from '../core/objects/hitbox';
 import { GameObject } from '../core/objects/gameObject';
 
@@ -39,26 +40,18 @@ async function loadGLTFModel(file: string, isEmissive: boolean = false): Promise
     });
 }
 
-
-async function addModelToScene(scene: THREE.Scene, file: string, position: THREE.Vector3, scale: number = 1, isEmissive: boolean = false) {
+async function loadModel(file: string, position: THREE.Vector3, scale: number = 1, isEmissive: boolean = false): Promise<THREE.Object3D> {
     const model = await loadGLTFModel(file, isEmissive);
     model.position.copy(position);
     model.scale.set(scale, scale, scale);
-    scene.add(model);
-}
-
-async function addModelToGameObject(gameObject: GameObject, file: string, position: THREE.Vector3, scale: number = 1, isEmissive: boolean = false) {
-    const model = await loadGLTFModel(file, isEmissive);
-    model.position.copy(position);
-    model.scale.set(scale, scale, scale);
-    gameObject.add(model);
+    return model;
 }
 
 async function repeatAddModel(amount: number, offset: THREE.Vector3, scene: THREE.Scene, file: string, position: THREE.Vector3, scale: number = 1, isEmissive: boolean = false) {
     const promises = [];
     for (let i = 0; i < amount; i++) {
         const pos = position.clone().add(offset.clone().multiplyScalar(i));
-        promises.push(addModelToScene(scene, file, pos, scale, isEmissive));
+        promises.push(scene.add(await loadModel(file, pos, scale, isEmissive))); // Directly adding the model to the scene
     }
     await Promise.all(promises);
 }
@@ -77,51 +70,36 @@ export async function createMain(listener: THREE.AudioListener): Promise<THREE.S
     pointLight.position.set(0, 2.5, 0);
     scene.add(pointLight);
 
-    // load static Models
-    await Promise.all([
-        addModelToScene(scene, pathToAssets + 'models/level/floor/floor_1.gltf', new THREE.Vector3(0, 0, 0)),
-        addModelToScene(scene, pathToAssets + 'models/level/floor/floor_1.gltf', new THREE.Vector3(0, 3, 0)),
-        repeatAddModel(4, new THREE.Vector3(2, 0, 0), scene, pathToAssets + 'models/level/walls/wall_1.gltf', new THREE.Vector3(-3, 0, -4)),
-        repeatAddModel(4, new THREE.Vector3(2, 0, 0), scene, pathToAssets + 'models/level/walls/wall_1.gltf', new THREE.Vector3(-3, 0, 4)),
-        //objects
-        addModelToScene(scene, pathToAssets + 'models/level/objects/barrel.gltf', new THREE.Vector3(-1, 0, -1)),
-        addModelToScene(scene, pathToAssets + 'models/level/objects/barrel.gltf', new THREE.Vector3(2, 0, 0.75)),
-        addModelToScene(scene, pathToAssets + 'models/level/objects/ball.gltf', new THREE.Vector3(0, 2.5, 0), 1, true), // Emissive ball
-    ]);
-    //load gameObjects
-    let ac_unit = new GameObject(listener);
-    ac_unit.position.set(2, 1, 3.875);
-    addModelToGameObject(ac_unit, pathToAssets + 'models/level/objects/ac_unit.gltf', new THREE.Vector3(0, 0, 0));
-    scene.add(ac_unit);
-    ac_unit.playSound(pathToAssets + '/sounds/scene/machinery/rattly_noise.mp3', true, 0.1, 1);
+    // Platform
+    let platforms = [];
 
-    const colliders: Hitbox[] = [
-        new Hitbox(new THREE.Vector3(-4, 0, 3.9), new THREE.Vector3(4, 3, 4.1)), // wall 1
-        new Hitbox(new THREE.Vector3(-4, 0, -3.9), new THREE.Vector3(4, 3, -4.1)), // wall 2
-        //objects
-        new Hitbox(new THREE.Vector3(-1-0.25, 0, -1-0.25), new THREE.Vector3(-1+0.25, 1, -1+0.25)), // barrel 1
-        new Hitbox(new THREE.Vector3(2-0.25, 0, 0.75-0.25), new THREE.Vector3(2+0.25, 1, 0.75+0.25)), // barrel 2
-        new Hitbox(new THREE.Vector3(2-0.4, 0, 3.875-0.125), new THREE.Vector3(2+0.4, 2, 3.875+0.125)), // ac_unit
-    ];
-    scene.userData = {
-        colliders: colliders
-    };
-    //visualizeCollirders(scene);
+    const platform1 = new Platform(new THREE.Vector3(-4, 0, -4),new THREE.Vector3(-4, 0, 4),new THREE.Vector3(4, 0, -4));
+    const platform2 = new Platform(new THREE.Vector3(4, 0, -4),new THREE.Vector3(4, 0, 4),new THREE.Vector3(8, 0, -4));
+    scene.add(await loadModel(pathToAssets + 'models/level/floor/floor_1.gltf', platform1.getCenter()));
+    const platform3 = new Platform(new THREE.Vector3(-4, 0, 4),new THREE.Vector3(4, 0, 4),new THREE.Vector3(-4, 2, 6));
+    const platform4 = new Platform(new THREE.Vector3(-4, 2, 6),new THREE.Vector3(4, 2, 6),new THREE.Vector3(-4, 2, 10));
+    const platform5 = new Platform(new THREE.Vector3(4, 2, 6),new THREE.Vector3(8, 2, 6),new THREE.Vector3(4, 2, 10));
+    const platform6 = new Platform(new THREE.Vector3(4, 2, 6),new THREE.Vector3(8, 2, 6),new THREE.Vector3(4, 2, -4));
+    platforms.push(platform6, platform5, platform4, platform3, platform2, platform1);
+
+    scene.userData.platforms = platforms;
+
+    visualizePlatforms(scene);
 
     return scene;
 }
 
-function visualizeCollirders(scene: THREE.Scene) {
-    const colliders = scene.userData.colliders || [];
-    colliders.forEach((collider: { max: THREE.Vector3Like; min: THREE.Vector3Like; }) => {
-        const boxGeometry = new THREE.BoxGeometry(
-            collider.max.x - collider.min.x,
-            collider.max.y - collider.min.y,
-            collider.max.z - collider.min.z
-        );
-        const boxMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
-        const boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
-        boxMesh.position.copy(collider.min).add(collider.max).multiplyScalar(0.5);
-        scene.add(boxMesh);
+function visualizePlatforms(scene: THREE.Scene) {
+    const platforms: Platform[] = scene.userData.platforms || [];
+    const material = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+
+    platforms.forEach(platform => {
+        const verts = platform.getVertices();
+        const points = [...verts, verts[0]];
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(geometry, material);
+        scene.add(line);
     });
 }
+
+
