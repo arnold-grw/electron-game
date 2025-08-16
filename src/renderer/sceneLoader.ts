@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { Platform } from '../core/objects/platform';
+import { Platform, Slope } from '../core/objects/platform';
 import { Hitbox } from '../core/objects/hitbox';
 import { GameObject } from '../core/objects/gameObject';
 
@@ -70,19 +70,29 @@ export async function createMain(listener: THREE.AudioListener): Promise<THREE.S
     pointLight.position.set(0, 2.5, 0);
     scene.add(pointLight);
 
-    // Platform
+    // Platforms
     let platforms = [];
-
-    const platform1 = new Platform(new THREE.Vector3(-4, 0, -4),new THREE.Vector3(-4, 0, 4),new THREE.Vector3(4, 0, -4));
-    const platform2 = new Platform(new THREE.Vector3(4, 0, -4),new THREE.Vector3(4, 0, 4),new THREE.Vector3(8, 0, -4));
+    const platform1 = new Platform(new THREE.Vector3(-4, 0, -4),new THREE.Vector3(4, 0, 8));
     scene.add(await loadModel(pathToAssets + 'models/level/floor/floor_1.gltf', platform1.getCenter()));
-    const platform3 = new Platform(new THREE.Vector3(-4, 0, 4),new THREE.Vector3(4, 0, 4),new THREE.Vector3(-4, 2, 6));
-    const platform4 = new Platform(new THREE.Vector3(-4, 2, 6),new THREE.Vector3(4, 2, 6),new THREE.Vector3(-4, 2, 10));
-    const platform5 = new Platform(new THREE.Vector3(4, 2, 6),new THREE.Vector3(8, 2, 6),new THREE.Vector3(4, 2, 10));
-    const platform6 = new Platform(new THREE.Vector3(4, 2, 6),new THREE.Vector3(8, 2, 6),new THREE.Vector3(4, 2, -4));
-    platforms.push(platform6, platform5, platform4, platform3, platform2, platform1);
-
+    const slope1 = new Slope(new THREE.Vector3(4, 0, 4), new THREE.Vector3(8, 2, 8), false);
+    const platform2 = new Platform(new THREE.Vector3(8, 2, 8),new THREE.Vector3(12, 2, -4));
+    const platform3 = new Platform(new THREE.Vector3(6, 2, -2),new THREE.Vector3(8, 2, 4));
+    platforms.push(platform3, platform2, slope1, platform1);
+    for (const p of platforms) {
+        p.updateConnections(platforms);
+    }
     scene.userData.platforms = platforms;
+
+    // Models
+    const barrel = await loadModel(pathToAssets + 'models/level/objects/barrel.gltf', new THREE.Vector3(2, 0, 1));
+    scene.add(barrel);
+
+    // Colliders
+    let colliders = [];
+    const barrelCollider = new Hitbox((new THREE.Vector3(2-0.25, 0, 1-0.25)),(new THREE.Vector3(2+0.25, 1, 1+0.25)));
+    colliders.push(barrelCollider);
+    scene.userData.colliders = colliders;
+
 
     visualizePlatforms(scene);
 

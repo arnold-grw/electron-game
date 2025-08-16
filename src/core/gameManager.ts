@@ -10,8 +10,8 @@ export class GameManager {
         this.player = new Player(scene);
     }
 
-    update() {
-        this.player.update();
+    update(deltaTime: number) {
+        this.player.update(deltaTime);
     }
 
     setScene(scene: THREE.Scene) {

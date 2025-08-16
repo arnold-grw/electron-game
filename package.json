@@ -32,6 +32,7 @@
   "homepage": "https://github.com/arnold-grw/electron-game#readme",
   "description": "",
   "dependencies": {
+    "stats.js": "^0.17.0",
     "three": "^0.179.1"
   },
   "devDependencies": {

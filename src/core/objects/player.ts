@@ -9,11 +9,12 @@ export class Player{
     playerController: PlayerController;
     body: THREE.Object3D;
     head: THREE.Object3D;
+    walkingSpeed: number = 4;
     collisionRadius: number = 0.3; // radius of the player for collision detection
 
     constructor(scene: THREE.Scene) {
         this.scene = scene;
-        this.playerController = new PlayerController(0.04);
+        this.playerController = new PlayerController(this.walkingSpeed);
         this.playerController.platforms = this.scene.userData.platforms || []; // Get platforms from scene data
         this.updateColliders() // Initialize colliders for the player controller
         this.body = new THREE.Object3D();
@@ -27,8 +28,8 @@ export class Player{
         this.playerController.colliders = updatedColliders;
     }
     
-    update() {
-        this.playerController.updatePos(this.body, this.collisionRadius);
+    update(deltaTime: number) {
+        this.playerController.updatePos(this.body, this.collisionRadius, deltaTime);
         this.playerController.updateRot(this.body, this.head);
     }
 }

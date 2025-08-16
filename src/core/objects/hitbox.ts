@@ -18,46 +18,59 @@ export class Hitbox {
         );
     }
 
-    intersectSegment(start: THREE.Vector3, end: THREE.Vector3): { point: THREE.Vector3; normal: THREE.Vector3 } | null {
-        // Fix Y to a constant height (e.g., player's standing height)
-        const fixedY = start.y+0.1; // or a constant like 0 if Boden ist immer 0
-        const start2D = new THREE.Vector3(start.x, fixedY, start.z);
-        const end2D = new THREE.Vector3(end.x, fixedY, end.z);
+    getIntersection(start: THREE.Vector3, end: THREE.Vector3): { point: THREE.Vector3; normal: THREE.Vector3; t: number } | null {
+        // We perform a 2D segment vs AABB (XZ plane) intersection
+        const fixedY = start.y + 0.1; // Y coordinate used for the intersection plane
 
-        const dir = new THREE.Vector3().subVectors(end2D, start2D);
-        const invDir = new THREE.Vector3(
-            1 / (dir.x !== 0 ? dir.x : 1e-10),
-            0, // ignore Y
-            1 / (dir.z !== 0 ? dir.z : 1e-10)
-        );
+        const start2D = new THREE.Vector2(start.x, start.z);
+        const end2D = new THREE.Vector2(end.x, end.z);
 
-        let tmin = (this.min.x - start2D.x) * invDir.x;
-        let tmax = (this.max.x - start2D.x) * invDir.x;
-        if (tmin > tmax) [tmin, tmax] = [tmax, tmin];
+        const dir2D = new THREE.Vector2().subVectors(end2D, start2D);
 
-        // Skip Y check!
+        if (dir2D.lengthSq() < 1e-12) return null; // no movement
 
-        let tzmin = (this.min.z - start2D.z) * invDir.z;
-        let tzmax = (this.max.z - start2D.z) * invDir.z;
-        if (tzmin > tzmax) [tzmin, tzmax] = [tzmax, tzmin];
+        // slab method for X and Z
+        let tmin = 0;
+        let tmax = 1;
 
-        if ((tmin > tzmax) || (tzmin > tmax)) return null;
-        if (tzmin > tmin) tmin = tzmin;
-        if (tzmax < tmax) tmax = tzmax;
-
-        if (tmin < 0 || tmin > 1) {
-            if (tmax < 0 || tmax > 1) return null;
-            else {
-                const point = start2D.clone().add(dir.clone().multiplyScalar(tmax));
-                point.y = fixedY; // restore Y
-                return { point, normal: this._calculateNormal(point) };
+        function updateInterval(minVal: number, maxVal: number, startVal: number, dirVal: number): boolean {
+            if (Math.abs(dirVal) < 1e-10) {
+                // Parallel movement
+                return startVal >= minVal && startVal <= maxVal;
             }
+            let t1 = (minVal - startVal) / dirVal;
+            let t2 = (maxVal - startVal) / dirVal;
+            if (t1 > t2) [t1, t2] = [t2, t1];
+            if (t1 > tmin) tmin = t1;
+            if (t2 < tmax) tmax = t2;
+            return tmin <= tmax;
         }
 
-        const point = start2D.clone().add(dir.clone().multiplyScalar(tmin));
-        point.y = fixedY; // restore Y
-        return { point, normal: this._calculateNormal(point) };
+        if (!updateInterval(this.min.x, this.max.x, start.x, end.x - start.x)) return null;
+        if (!updateInterval(this.min.z, this.max.z, start.z, end.z - start.z)) return null;
+
+        // Now tmin and tmax represent intervals where segment overlaps box in XZ
+        // We want earliest t in [0,1]
+        if (tmin > 1 || tmax < 0) return null;
+
+        let t = Math.max(tmin, 0);
+        if (t > 1) return null;
+
+        // intersection point in 3D:
+        const point = new THREE.Vector3(
+            start.x + (end.x - start.x) * t,
+            fixedY,
+            start.z + (end.z - start.z) * t
+        );
+
+        // Calculate normal of the face hit by checking which side is closest to the point
+        // We use same helper as before:
+
+        const normal = this._calculateNormal(point);
+
+        return { point, normal, t };
     }
+
 
 
     // Helper method to compute normal of the AABB face closest to the point
