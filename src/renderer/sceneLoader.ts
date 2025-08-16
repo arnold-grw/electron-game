@@ -76,11 +76,12 @@ export async function createMain(listener: THREE.AudioListener): Promise<THREE.S
     scene.add(await loadModel(pathToAssets + 'models/level/floor/floor_1.gltf', platform1.getCenter()));
     const slope1 = new Slope(new THREE.Vector3(4, 0, 4), new THREE.Vector3(8, 2, 8), false);
     const platform2 = new Platform(new THREE.Vector3(8, 2, 8),new THREE.Vector3(12, 2, -4));
-    const platform3 = new Platform(new THREE.Vector3(6, 2, -2),new THREE.Vector3(8, 2, 4));
+    const platform3 = new Platform(new THREE.Vector3(2, 2, -2),new THREE.Vector3(8, 2, 4));
     platforms.push(platform3, platform2, slope1, platform1);
     for (const p of platforms) {
         p.updateConnections(platforms);
     }
+    platform3.connections = [platform2];
     scene.userData.platforms = platforms;
 
     // Models

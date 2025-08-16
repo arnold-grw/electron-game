@@ -27,7 +27,7 @@ export class PlayerController {
         const direction = this.getWASD();
         const moveDir = new THREE.Vector3();
         const targetVelocity = new THREE.Vector3();
-
+    
         // prepare movement
         if (direction.lengthSq() > 0) {
             moveDir.set(direction.x, 0, direction.z)
@@ -35,95 +35,77 @@ export class PlayerController {
                 .normalize();
             targetVelocity.copy(moveDir).multiplyScalar(this.walkingSpeed);
         }
-
+    
         // smooth transition to target velocity
-        //this.velocity.lerp(targetVelocity, this.acceleration);
         const lerpFactor = 1 - Math.pow(1 - this.acceleration, deltaTime);
         this.velocity.lerp(targetVelocity, lerpFactor);
-
-        // damping
+    
+        // damping when no input
         if (direction.lengthSq() === 0) {
             const dampingFactor = Math.pow(this.damping, deltaTime);
             this.velocity.multiplyScalar(dampingFactor);
         }
-
-        // tiny threshold to skip work
+    
         if (this.velocity.lengthSq() < 1e-8) return;
-
+    
         const platformNavigator = new PlatformNavigator(this.platforms);
-
-        // start position and remaining movement for this frame
+    
+        // snap to current platform Y
         let start = body.position.clone();
-        // ensure player's height matches current platform (if any)
-        const currentPlatform = platformNavigator.findCurrentPlatform(start);
+        let currentPlatform = platformNavigator.findCurrentPlatform(start);
         if (currentPlatform) {
             start.y = platformNavigator.findY(start, currentPlatform);
             body.position.y = start.y;
         }
-
-        let remaining = this.velocity.clone().multiplyScalar(deltaTime); // full desired displacement this frame
-
+    
+        let remaining = this.velocity.clone().multiplyScalar(deltaTime);
+    
         const MAX_ITER = 4;
         const eps = 0.001;
-
+    
         for (let iter = 0; iter < MAX_ITER; iter++) {
             if (remaining.lengthSq() < 1e-8) break;
-
+    
             const end = start.clone().add(remaining);
-
-            // determine whether stepping into a new platform is allowed
+    
+            // where are we trying to go?
             const targetPlatform = platformNavigator.findCurrentPlatform(end);
-            const stepAllowed = (currentPlatform &&
+    
+            // can we step into target?
+            const stepAllowed = (
+                currentPlatform &&
                 targetPlatform &&
-                (currentPlatform === targetPlatform || currentPlatform.isConnectedTo(targetPlatform)));
-
-            // find earliest collision across:
-            //  - current platform edges (only if step not allowed)
-            //  - other platforms (except when they are targetPlatform and connected to currentPlatform)
-            //  - generic colliders
+                (currentPlatform === targetPlatform ||
+                 currentPlatform.isConnectedTo(targetPlatform))
+            );
+    
             let closestHit: {
                 t: number;
                 point: THREE.Vector3;
                 normal: THREE.Vector3;
-                platform?: Platform;
-                edgeA?: THREE.Vector3;
-                edgeB?: THREE.Vector3;
             } | null = null;
-
-            // 1) platforms
-            for (const platform of this.platforms) {
-                // skip checking edges that represent allowed step between current and target
-                if (currentPlatform && platform === currentPlatform && stepAllowed) continue;
-                if (targetPlatform && platform === targetPlatform && currentPlatform && currentPlatform.isConnectedTo(targetPlatform)) continue;
-
-                const hit = platform.getIntersection(start, end);
-                if (!hit) continue;
-
-                // decide if wall should block based on player's vertical position and the edge vertical extent
-                const maxEdgeY = Math.max(hit.edgeA.y, hit.edgeB.y);
-                const minEdgeY = Math.min(hit.edgeA.y, hit.edgeB.y);
-
-                // player's foot y (we assume player stands on start.y)
-                const playerY = start.y;
-
-                // block if player's foot is <= maxEdgeY + eps (i.e. not climbing over)
-                if (playerY <= maxEdgeY + 0.01) {
-                    if (!closestHit || hit.t < closestHit.t) {
+    
+            // test collisions against the current platform
+            if (currentPlatform && !stepAllowed) {
+                const hit = currentPlatform.getIntersection(start, end);
+                if (hit) {
+                    const maxEdgeY = Math.max(hit.edgeA.y, hit.edgeB.y);
+                    const playerY = start.y;
+    
+                    // only block if player is at or below the edge height
+                    if (playerY <= maxEdgeY + 0.01) {
                         closestHit = {
                             t: hit.t,
                             point: hit.point,
                             normal: hit.normal,
-                            platform,
-                            edgeA: hit.edgeA,
-                            edgeB: hit.edgeB,
                         };
                     }
                 }
             }
-
-            // 2) other colliders
+    
+            // also test against generic colliders
             for (const collider of this.colliders) {
-                const hit = collider.getIntersection(start, end); // assumed same return shape: { point, normal, t }
+                const hit = collider.getIntersection(start, end);
                 if (!hit) continue;
                 if (!closestHit || hit.t < closestHit.t) {
                     closestHit = {
@@ -133,41 +115,39 @@ export class PlayerController {
                     };
                 }
             }
-
-            // no collision -> consume whole movement and break
+    
             if (!closestHit) {
+                // no collision → move freely
                 start.add(remaining);
                 remaining.set(0, 0, 0);
                 break;
             }
-
-            // move to collision point (consuming movement up to t)
-            // collision point is along start->end: start + remaining * t
+    
+            // stop at collision point
             const consumed = remaining.clone().multiplyScalar(closestHit.t);
             start.add(consumed);
-
-            // small push out to avoid re-hitting the same surface next iteration
+    
+            // nudge out
             start.addScaledVector(closestHit.normal, eps);
-
-            // compute remaining movement AFTER collision (1 - t)
+    
+            // compute remainder after collision
             remaining.multiplyScalar(1 - closestHit.t);
-
-            // slide: project remaining on collision plane (remove normal component)
+    
+            // slide along surface
             remaining = remaining.projectOnPlane(closestHit.normal);
-
-            // update currentPlatform after small move (so next iteration knows if we stepped onto new platform)
+    
+            // update platform snap
             const maybePlatform = platformNavigator.findCurrentPlatform(start);
             if (maybePlatform) {
                 start.y = platformNavigator.findY(start, maybePlatform);
                 body.position.y = start.y;
+                currentPlatform = maybePlatform;
             }
         }
-
-        // finalize position & velocity
+    
         body.position.copy(start);
-
     }
-
+    
 
 
     updateRot(body: THREE.Object3D, head: THREE.Object3D) {

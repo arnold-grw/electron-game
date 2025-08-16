@@ -22,6 +22,11 @@ export class Hitbox {
         // We perform a 2D segment vs AABB (XZ plane) intersection
         const fixedY = start.y + 0.1; // Y coordinate used for the intersection plane
 
+        //skip if the hitbox is below or over the the player
+        if (start.y < this.min.y || start.y > this.max.y) {
+            return null;
+        }
+
         const start2D = new THREE.Vector2(start.x, start.z);
         const end2D = new THREE.Vector2(end.x, end.z);
 

@@ -11,7 +11,7 @@ export class PlatformNavigator {
     findCurrentPlatform(playerPosition: THREE.Vector3): Platform | null {
         for (const platform of this.platforms) {
             if (platform.isInside(playerPosition)) {
-                if (platform.getY(playerPosition)-1 < playerPosition.y) {
+                if (platform.getY(playerPosition)-0.1 < playerPosition.y) {
                     return platform;
                 }
             }

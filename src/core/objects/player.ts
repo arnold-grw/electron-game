@@ -10,7 +10,7 @@ export class Player{
     body: THREE.Object3D;
     head: THREE.Object3D;
     walkingSpeed: number = 4;
-    collisionRadius: number = 0.3; // radius of the player for collision detection
+    collisionRadius: number = 0.5; // radius of the player for collision detection
 
     constructor(scene: THREE.Scene) {
         this.scene = scene;

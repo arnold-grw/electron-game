@@ -35,16 +35,16 @@ export class Platform {
 
     /** Prüft, ob ein Punkt innerhalb der Plattform liegt */
     isInside(pos: THREE.Vector3): boolean {
-    const minX = Math.min(this.from.x, this.to.x);
-    const maxX = Math.max(this.from.x, this.to.x);
-    const minZ = Math.min(this.from.z, this.to.z);
-    const maxZ = Math.max(this.from.z, this.to.z);
+        const minX = Math.min(this.from.x, this.to.x);
+        const maxX = Math.max(this.from.x, this.to.x);
+        const minZ = Math.min(this.from.z, this.to.z);
+        const maxZ = Math.max(this.from.z, this.to.z);
 
-    return (
-        minX <= pos.x && pos.x <= maxX &&
-        minZ <= pos.z && pos.z <= maxZ
-    );
-}
+        return (
+            minX <= pos.x && pos.x <= maxX &&
+            minZ <= pos.z && pos.z <= maxZ
+        );
+    }
 
 
     isConnectedTo(other: Platform): boolean {
@@ -58,38 +58,51 @@ export class Platform {
 
     updateConnections(allPlatforms: Platform[]) {
         const eps = 0.001;
-
+    
         for (const other of allPlatforms) {
             if (other === this) continue;
-
-            // Edges align in X/Z:
+    
+            // Exclude side edges of slopes
+            const thisIsSideEdge =
+                this instanceof Slope &&
+                ((this.towardsZ && Math.abs(this.from.z - this.to.z) < eps) ||
+                 (!this.towardsZ && Math.abs(this.from.x - this.to.x) < eps));
+    
+            const otherIsSideEdge =
+                other instanceof Slope &&
+                ((other.towardsZ && Math.abs(other.from.z - other.to.z) < eps) ||
+                 (!other.towardsZ && Math.abs(other.from.x - other.to.x) < eps));
+    
+            if (thisIsSideEdge || otherIsSideEdge) continue; // skip connecting side edges
+    
+            // Check if Y is close enough
             const sameY =
                 Math.abs(this.from.y - other.from.y) < eps ||
                 Math.abs(this.to.y - other.to.y) < eps ||
                 Math.abs(this.from.y - other.to.y) < eps ||
                 Math.abs(this.to.y - other.from.y) < eps;
-
+    
             // X/Z bounds for both
             const x1min = Math.min(this.from.x, this.to.x);
             const x1max = Math.max(this.from.x, this.to.x);
             const z1min = Math.min(this.from.z, this.to.z);
             const z1max = Math.max(this.from.z, this.to.z);
-
+    
             const x2min = Math.min(other.from.x, other.to.x);
             const x2max = Math.max(other.from.x, other.to.x);
             const z2min = Math.min(other.from.z, other.to.z);
             const z2max = Math.max(other.from.z, other.to.z);
-
+    
             // Check if one edge is touching vertically
             const shareVerticalEdge =
                 (Math.abs(x1min - x2max) < eps || Math.abs(x1max - x2min) < eps) &&
                 (Math.max(z1min, z2min) < Math.min(z1max, z2max) - eps);
-
+    
             // Or horizontally
             const shareHorizontalEdge =
                 (Math.abs(z1min - z2max) < eps || Math.abs(z1max - z2min) < eps) &&
                 (Math.max(x1min, x2min) < Math.min(x1max, x2max) - eps);
-
+    
             if ((shareVerticalEdge || shareHorizontalEdge) && sameY) {
                 if (!this.connections.includes(other)) {
                     this.connections.push(other);
@@ -97,6 +110,8 @@ export class Platform {
             }
         }
     }
+    
+    
 
     getIntersection(start: THREE.Vector3, end: THREE.Vector3): {
         point: THREE.Vector3;
@@ -169,8 +184,6 @@ export class Platform {
 
         return closest;
     }
-
-
 
 }
 
