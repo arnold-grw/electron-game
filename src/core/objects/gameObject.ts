@@ -3,8 +3,9 @@ import * as THREE from 'three';
 export class GameObject extends THREE.Object3D {
     listener: THREE.AudioListener;
 
-    constructor(listener: THREE.AudioListener) {
+    constructor(pos: THREE.Vector3, listener: THREE.AudioListener) {
         super();
+        this.position.copy(pos);
         this.listener = listener;
     }
 

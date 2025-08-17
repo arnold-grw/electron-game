@@ -56,32 +56,31 @@ export class Platform {
         return false;
     }
 
+
     updateConnections(allPlatforms: Platform[]) {
         const eps = 0.001;
     
         for (const other of allPlatforms) {
             if (other === this) continue;
-    
-            // Exclude side edges of slopes
-            const thisIsSideEdge =
-                this instanceof Slope &&
-                ((this.towardsZ && Math.abs(this.from.z - this.to.z) < eps) ||
-                 (!this.towardsZ && Math.abs(this.from.x - this.to.x) < eps));
-    
-            const otherIsSideEdge =
-                other instanceof Slope &&
-                ((other.towardsZ && Math.abs(other.from.z - other.to.z) < eps) ||
-                 (!other.towardsZ && Math.abs(other.from.x - other.to.x) < eps));
-    
-            if (thisIsSideEdge || otherIsSideEdge) continue; // skip connecting side edges
-    
-            // Check if Y is close enough
-            const sameY =
-                Math.abs(this.from.y - other.from.y) < eps ||
-                Math.abs(this.to.y - other.to.y) < eps ||
-                Math.abs(this.from.y - other.to.y) < eps ||
-                Math.abs(this.to.y - other.from.y) < eps;
-    
+
+            let checkVertical: boolean = true;
+            let checkHorizontal: boolean = true;
+            if (!(this instanceof Slope || other instanceof Slope)) {
+                //Y must be same
+                if (Math.abs(this.from.y - other.from.y) > eps) {
+                    continue;
+                }
+            } else {
+                if (this instanceof Slope) {
+                    checkHorizontal = this.towardsZ;
+                    checkVertical = !this.towardsZ;
+                }
+                if (other instanceof Slope) {
+                    if (checkHorizontal) checkHorizontal = other.towardsZ;
+                    if (checkVertical) checkVertical = !other.towardsZ;
+                }
+            }
+
             // X/Z bounds for both
             const x1min = Math.min(this.from.x, this.to.x);
             const x1max = Math.max(this.from.x, this.to.x);
@@ -94,22 +93,28 @@ export class Platform {
             const z2max = Math.max(other.from.z, other.to.z);
     
             // Check if one edge is touching vertically
-            const shareVerticalEdge =
+            let shareVerticalEdge = false;
+            if (checkVertical) {
+                shareVerticalEdge =
                 (Math.abs(x1min - x2max) < eps || Math.abs(x1max - x2min) < eps) &&
                 (Math.max(z1min, z2min) < Math.min(z1max, z2max) - eps);
-    
+            }
             // Or horizontally
-            const shareHorizontalEdge =
+            let shareHorizontalEdge = false;
+            if (checkHorizontal) {
+                shareHorizontalEdge =
                 (Math.abs(z1min - z2max) < eps || Math.abs(z1max - z2min) < eps) &&
                 (Math.max(x1min, x2min) < Math.min(x1max, x2max) - eps);
+            }
     
-            if ((shareVerticalEdge || shareHorizontalEdge) && sameY) {
+            if ((shareVerticalEdge || shareHorizontalEdge)) {
                 if (!this.connections.includes(other)) {
                     this.connections.push(other);
                 }
             }
         }
     }
+    
     
     
 

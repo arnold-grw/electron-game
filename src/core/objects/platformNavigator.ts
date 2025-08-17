@@ -11,7 +11,8 @@ export class PlatformNavigator {
     findCurrentPlatform(playerPosition: THREE.Vector3): Platform | null {
         for (const platform of this.platforms) {
             if (platform.isInside(playerPosition)) {
-                if (platform.getY(playerPosition)-0.1 < playerPosition.y) {
+                const eps = 0.2;
+                if (Math.abs(platform.getY(playerPosition) - playerPosition.y) < eps) {
                     return platform;
                 }
             }
@@ -26,6 +27,7 @@ export class PlatformNavigator {
         return 0; //default height if no platform found
     }
 
+    /*
     canStepTo(targetPosition: THREE.Vector3, currentPlatform: Platform): boolean {
         const targetPlatform: Platform | null = this.findCurrentPlatform(targetPosition);
         if (targetPlatform && currentPlatform) {
@@ -40,6 +42,7 @@ export class PlatformNavigator {
         }
         return false;
     }
+    */
 
 
     /*

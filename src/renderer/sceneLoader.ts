@@ -63,39 +63,50 @@ export async function createMain(listener: THREE.AudioListener): Promise<THREE.S
         listener: listener
     };
 
-    // Light
-    const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
-    scene.add(ambientLight);
-    const pointLight = new THREE.PointLight(0xffffff, 10, 75);
-    pointLight.position.set(0, 2.5, 0);
-    scene.add(pointLight);
+    let playerDist = 0.25;
 
     // Platforms
-    let platforms = [];
-    const platform1 = new Platform(new THREE.Vector3(-4, 0, -4),new THREE.Vector3(4, 0, 8));
-    scene.add(await loadModel(pathToAssets + 'models/level/floor/floor_1.gltf', platform1.getCenter()));
-    const slope1 = new Slope(new THREE.Vector3(4, 0, 4), new THREE.Vector3(8, 2, 8), false);
-    const platform2 = new Platform(new THREE.Vector3(8, 2, 8),new THREE.Vector3(12, 2, -4));
-    const platform3 = new Platform(new THREE.Vector3(2, 2, -2),new THREE.Vector3(8, 2, 4));
-    platforms.push(platform3, platform2, slope1, platform1);
+    let platforms = [
+        new Platform(new THREE.Vector3(-4+playerDist, 0, -4),new THREE.Vector3(4-playerDist, 0, 4)),
+        new Platform(new THREE.Vector3(-4, 0, 8),new THREE.Vector3(12, 0, 12)),
+        new Slope(new THREE.Vector3(4, 0, 4), new THREE.Vector3(8, 3, 8), false),
+        new Platform(new THREE.Vector3(8, 3, 8),new THREE.Vector3(12, 3, -4)),
+        new Platform(new THREE.Vector3(-4, 3, -4),new THREE.Vector3(8, 3, 4))
+    ];
     for (const p of platforms) {
         p.updateConnections(platforms);
     }
-    platform3.connections = [platform2];
     scene.userData.platforms = platforms;
 
     // Models
+    scene.add(await loadModel(pathToAssets + 'models/level/levels/room_1.gltf', new THREE.Vector3(0, 0, 0)));
+    scene.add(await loadModel(pathToAssets + 'models/level/objects/ball.gltf', new THREE.Vector3(0, 2.5, 0), 1, true));
+
     const barrel = await loadModel(pathToAssets + 'models/level/objects/barrel.gltf', new THREE.Vector3(2, 0, 1));
     scene.add(barrel);
 
+    const ac_unit = new GameObject(new THREE.Vector3(-4,0,0), listener);
+    ac_unit.add(await loadModel(pathToAssets + 'models/level/objects/ac_unit.gltf', new THREE.Vector3(0, 0, 0)));
+    ac_unit.rotation.y =- Math.PI/2;
+    scene.add(ac_unit);
+    ac_unit.playSound(pathToAssets + 'sounds/scene/machinery/rattly_noise.mp3', true, 1, 3);
+
     // Colliders
     let colliders = [];
-    const barrelCollider = new Hitbox((new THREE.Vector3(2-0.25, 0, 1-0.25)),(new THREE.Vector3(2+0.25, 1, 1+0.25)));
+    const barrelCollider = new Hitbox((new THREE.Vector3(2-0.125-playerDist, 0, 1-0.125-playerDist)),(new THREE.Vector3(2+0.125+playerDist, 1, 1+0.125+playerDist)));
     colliders.push(barrelCollider);
     scene.userData.colliders = colliders;
 
 
-    visualizePlatforms(scene);
+    //visualizePlatforms(scene);
+
+    // Light
+    const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+    scene.add(ambientLight);
+    const pointLight = new THREE.PointLight(0xffffff, 8, 50);
+    pointLight.position.set(0, 2.5, 0);
+    scene.add(pointLight);
+
 
     return scene;
 }
