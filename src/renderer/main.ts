@@ -9,8 +9,8 @@ const renderer = new THREE.WebGLRenderer({
 });
 
 // set render size
-renderer.setSize(640, 360, false);
-// renderer.setSize(1900, 1080, false);
+renderer.setSize(640*0.75, 360*0.75, false);
+//renderer.setSize(1900, 1080, false);
 renderer.setPixelRatio(window.devicePixelRatio);
 const canvas = renderer.domElement;
 canvas.addEventListener('click', () => {

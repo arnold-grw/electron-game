@@ -9,12 +9,15 @@ export class Player{
     playerController: PlayerController;
     body: THREE.Object3D;
     head: THREE.Object3D;
-    walkingSpeed: number = 2;
-    collisionRadius: number = 0.5; // radius of the player for collision detection
+    walkSpeed: number = 2;
+    crouchSpeed: number = 1;
+
+    headHeight: number = 1.65;
+    crouchHeight: number = 1.15;
 
     constructor(scene: THREE.Scene) {
         this.scene = scene;
-        this.playerController = new PlayerController(this.walkingSpeed);
+        this.playerController = new PlayerController(this.walkSpeed, this.crouchSpeed, this.headHeight);
         this.playerController.platforms = this.scene.userData.platforms || []; // Get platforms from scene data
         this.updateColliders() // Initialize colliders for the player controller
         this.body = new THREE.Object3D();
@@ -29,7 +32,8 @@ export class Player{
     }
     
     update(deltaTime: number) {
-        this.playerController.updatePos(this.body, this.collisionRadius, deltaTime);
+        this.playerController.updatePos(this.body, deltaTime);
         this.playerController.updateRot(this.body, this.head);
+        this.playerController.updateHeadHeight(this.head, this.headHeight, this.crouchHeight, deltaTime);
     }
 }

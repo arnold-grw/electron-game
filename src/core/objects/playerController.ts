@@ -3,27 +3,44 @@ import { InputManager } from '../manager/inputManager';
 import { Platform } from './platform';
 import { Hitbox } from './hitbox';
 import { PlatformNavigator } from './platformNavigator';
+import { lerp } from '../utils';
 
 export class PlayerController {
     input: InputManager;
     platforms: Platform[] = [];
     colliders: Hitbox[] = [];
-    walkingSpeed: number;
+    walkSpeed: number;
+    crouchSpeed: number;
     mouseSensitivity: number = 0.002;
+
+    isCrouching: boolean = false;
 
     yaw: number = 0;
     pitch: number = 0;
 
+    currentSpeed: number = 2;
     velocity: THREE.Vector3 = new THREE.Vector3(); // current velocity
     acceleration: number = 0.99; //between 0 and 1
     damping: number = 0.001; //between 0 and 1
 
-    constructor(walkingSpeed: number) {
-        this.walkingSpeed = walkingSpeed;
+    currentHeadHeight: number;
+
+    constructor(walkSpeed: number, crouchSpeed: number, normalHeadHeight: number) {
+        this.walkSpeed = walkSpeed;
+        this.crouchSpeed = crouchSpeed;
         this.input = new InputManager();
+        this.currentHeadHeight = normalHeadHeight;
     }
 
-    updatePos(body: THREE.Object3D, collisionRadius: number, deltaTime: number) {
+    updateSpeed(){
+        this.currentSpeed = this.walkSpeed;
+        if (this.isCrouching) {
+            this.currentSpeed = this.crouchSpeed;
+        }
+    }
+
+    updatePos(body: THREE.Object3D, deltaTime: number) {
+        this.updateSpeed();
         const direction = this.getWASD();
         const moveDir = new THREE.Vector3();
         const targetVelocity = new THREE.Vector3();
@@ -33,7 +50,7 @@ export class PlayerController {
             moveDir.set(direction.x, 0, direction.z)
                 .applyEuler(new THREE.Euler(0, body.rotation.y, 0))
                 .normalize();
-            targetVelocity.copy(moveDir).multiplyScalar(this.walkingSpeed);
+            targetVelocity.copy(moveDir).multiplyScalar(this.currentSpeed);
         }
     
         // smooth transition to target velocity
@@ -149,7 +166,6 @@ export class PlayerController {
     }
     
 
-
     updateRot(body: THREE.Object3D, head: THREE.Object3D) {
         const delta = this.input.mouseDelta;
 
@@ -165,6 +181,22 @@ export class PlayerController {
         this.input.resetDeltas();
     }
 
+    updateHeadHeight(head: THREE.Object3D, normalHeight: number, crouchHeight: number, deltaTime: number) {
+        let targetHeight;
+        if (this.input.isKeyDown('ControlLeft')) {
+            this.isCrouching = true;
+            targetHeight = crouchHeight;
+        } else {
+            this.isCrouching = false;
+            targetHeight = normalHeight;
+        }
+
+        const lerpFactor = 5;
+        this.currentHeadHeight = lerp(this.currentHeadHeight, targetHeight, lerpFactor*deltaTime);
+
+        head.position.y = this.currentHeadHeight;
+    }
+
     getWASD(): THREE.Vector3 {
         const direction = new THREE.Vector3();
         if (this.input.isKeyDown('KeyW')) direction.z = -1;
@@ -177,5 +209,5 @@ export class PlayerController {
 
     updateWalkCycle() {
         // Implement walk cycle logic if needed
-    }
+    } 
 }
