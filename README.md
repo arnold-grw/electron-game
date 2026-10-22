@@ -4,7 +4,7 @@
 A first-person 3D desktop game prototype. The application uses Electron as the desktop shell and Three.js for the scene, rendering, and gameplay objects. The sample level includes a room, platforms, obstacles, and an ambient sound object.
 
 <p align="center">
-  <img src="docs/barrel.png" width="800" />
+  <img src="docs/barrel.png" width="1000" />
 </p>
 
 ## Requirements
