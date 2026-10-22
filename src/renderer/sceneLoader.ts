@@ -17,15 +17,15 @@ async function loadGLTFModel(file: string, isEmissive: boolean = false): Promise
                         const mesh = child as THREE.Mesh;
                         mesh.geometry.computeVertexNormals();
 
-                        // Material aus dem GLTF übernehmen
+                        // Preserve the material from the GLTF model.
                         const mat = mesh.material as THREE.MeshStandardMaterial;
                         mat.flatShading = false;
 
                         if (isEmissive) {
-                            mat.emissive = new THREE.Color(0xffffff); // volle Helligkeit
+                            mat.emissive = new THREE.Color(0xffffff); // Full brightness.
                             mat.emissiveIntensity = 1.0;
                             if (mat.map) {
-                                mat.emissiveMap = mat.map; // gleiche Textur als Emissive-Map
+                                mat.emissiveMap = mat.map; // Reuse the texture as the emissive map.
                             }
                         }
 
@@ -123,5 +123,4 @@ function visualizePlatforms(scene: THREE.Scene) {
         scene.add(line);
     });
 }
-
 

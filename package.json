@@ -10,7 +10,7 @@
     "start": "electron .",
     "dev:main": "tsc -w -p .",
     "dev:vite": "vite",
-    "dev:electron": "electron .",
+    "dev:electron": "cross-env VITE_DEV_SERVER_URL=http://localhost:3000 electron .",
     "dev": "concurrently \"npm run dev:main\" \"npm run dev:vite\" \"npm run dev:electron\""
   },
   "build": {
@@ -36,13 +36,13 @@
     "three": "^0.179.1"
   },
   "devDependencies": {
-    "@types/node": "^24.2.1",
+    "@types/node": "^24.19.2",
     "@types/three": "^0.179.0",
-    "concurrently": "^9.2.0",
-    "cross-env": "^10.0.0",
-    "electron": "^37.2.6",
-    "electron-builder": "^26.0.12",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.1"
+    "concurrently": "^9.2.5",
+    "cross-env": "^10.1.0",
+    "electron": "^45.0.0",
+    "electron-builder": "^27.0.0-alpha.11",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.7"
   }
 }

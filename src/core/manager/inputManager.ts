@@ -16,7 +16,7 @@ export class InputManager {
     window.addEventListener('mousemove', this.onMouseMove);
   }
 
-  // Tastatur-Handler
+  // Keyboard event handlers.
   private onKeyDown = (event: KeyboardEvent) => {
     this.keys[event.code] = true;
   };
@@ -25,7 +25,7 @@ export class InputManager {
     this.keys[event.code] = false;
   };
 
-  // Maus-Handler
+  // Mouse event handlers.
   private onMouseDown = (event: MouseEvent) => {
     this.mouseButtons[event.button] = true;
   };
@@ -36,16 +36,16 @@ export class InputManager {
 
   private onMouseMove = (event: MouseEvent) => {
     if (document.pointerLockElement === event.target) {
-        // relative Mausbewegung
+        // Use relative mouse movement.
         this.mouseDelta.set(event.movementX, event.movementY);
     } else {
-        // fallback wenn Pointer Lock nicht aktiv ist (optional)
+        // Reset movement when pointer lock is inactive.
         this.mouseDelta.set(0, 0);
     }
     };
 
 
-  // API zum Abfragen
+  // Input query methods.
   public isKeyDown(keyCode: string): boolean {
     return !!this.keys[keyCode];
   }
@@ -54,12 +54,12 @@ export class InputManager {
     return !!this.mouseButtons[button];
   }
 
-  // Aufruf am Ende des Frames, um mouseDelta zurückzusetzen
+  // Reset mouse movement at the end of each frame.
   public resetDeltas() {
     this.mouseDelta.set(0, 0);
   }
 
-  // Optional: Cleanup, falls du Listener entfernen willst
+  // Remove event listeners when the input manager is no longer needed.
   public dispose() {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);

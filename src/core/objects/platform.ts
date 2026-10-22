@@ -13,7 +13,7 @@ export class Platform {
         this.offset = this.to.clone().sub(this.from);
     }
 
-    /** Alle vier Eckpunkte (zur Anzeige oder Kollisionsvisualisierung) */
+    /** Returns all four corners for display or collision visualization. */
     getVertices(): THREE.Vector3[] {
         const v1 = this.from.clone();
         const v2 = this.from.clone().add(new THREE.Vector3(this.offset.x, 0, 0));
@@ -26,14 +26,14 @@ export class Platform {
         return this.from.clone().add(this.offset.clone().multiplyScalar(0.5));
     }
 
-    /** Gibt die Y-Position der Plattform an einem XZ-Punkt zurück */
+    /** Returns the platform's Y position at an XZ point. */
     getY(pos: THREE.Vector3): number {
         //if (!this.isInside(pos)) return NaN; //check if pos is inside platform
 
         return this.from.y; // assuming horizontal platform
     }
 
-    /** Prüft, ob ein Punkt innerhalb der Plattform liegt */
+    /** Checks whether a point lies within the platform. */
     isInside(pos: THREE.Vector3): boolean {
         const minX = Math.min(this.from.x, this.to.x);
         const maxX = Math.max(this.from.x, this.to.x);
