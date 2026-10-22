@@ -1,3 +1,9 @@
+
+<p align="center">
+  <img src="docs/barrel.png" width="500" />
+</p>
+
+
 # Electron Game
 
 A first-person 3D desktop game prototype. The application uses Electron as the desktop shell and Three.js for the scene, rendering, and gameplay objects. The sample level includes a room, platforms, obstacles, and an ambient sound object.
